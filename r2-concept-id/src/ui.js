@@ -88,7 +88,7 @@ function nav(user, page) {
     : `<button class="btn sm icon-btn" id="theme-toggle" aria-label="${themeTitle}" title="${themeTitle}">${themeIcon}</button><button class="btn sm pri" id="go-login">Login</button>`
   return `<nav class="top">
     <div class="nav-container navin">
-      <div class="nav-left"><div class="logo">R2 <b>Concept</b> ID</div></div>
+      <div class="nav-left"><div class="logo">R2<b>Concept</b>ID</div></div>
       <div class="nav-center">${tabs}</div>
       <div class="nav-right">${actions}</div>
       <button class="btn sm icon-btn nav-burger" id="nav-burger" aria-label="Buka menu" aria-expanded="false" aria-controls="nav-mobile">${iconMenu}</button>
