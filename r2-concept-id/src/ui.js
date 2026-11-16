@@ -1,5 +1,5 @@
 import { getCategories, getCurrentUser, listUsers, login, logout, createUser, deleteUser, filterProducts, buildWhatsAppUrl, getProductsNotice, clearProductsNotice, exportProductsJSON, importProductsJSON, resetDemoProducts } from './store.js'
-import { createProduct, deleteProduct, listProducts, updateProduct, WHATSAPP_NUMBER } from './products.js'
+import { createProduct, deleteProduct, listProducts, updateProduct, WHATSAPP_NUMBER, generateProductCode } from './products.js'
 
 const BANNER_URL = 'https://i.imgur.com/FcGHtpi.png'
 
@@ -201,7 +201,8 @@ function renderAdminProducts(view, state) {
   const products = listProducts()
   const editing = state.editingId ? products.find((p) => p.id === state.editingId) : null
   const cats = getCategories()
-  const f = editing || { code: '', name: '', category: cats[0], price: 0, slot: 0, description: '', imageUrl: '', featured: false }
+  const defaultCat = cats[0]
+  const f = editing || { code: generateProductCode(defaultCat, products), name: '', category: defaultCat, price: 0, slot: 0, description: '', imageUrl: '', featured: false }
   view.innerHTML = `
     <section class="section"><div class="wrap">
       <div class="glass panel" style="margin-bottom:14px">
@@ -220,9 +221,10 @@ function renderAdminProducts(view, state) {
         <h2>${editing ? 'Edit Produk' : 'Tambah Produk'}</h2>
         <form id="pform" class="stack" data-edit-id="${esc(editing?.id || '')}">
           <div class="row2">
-            <label>Kode<input class="field" name="code" required value="${esc(f.code)}" placeholder="R2-XXX-01"></label>
-            <label>Kategori<select class="field" name="category">${cats.map((c) => `<option ${c === f.category ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></label>
+            <label>Kode<input class="field" name="code" id="pcode" required value="${esc(f.code)}" ${editing ? '' : 'readonly'} placeholder="Otomatis"></label>
+            <label>Kategori<select class="field" name="category" id="pcategory">${cats.map((c) => `<option ${c === f.category ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></label>
           </div>
+          ${editing ? '' : '<p class="muted small">Kode produk dibuat otomatis berdasarkan kategori (dapat diubah saat edit).</p>'}
           <label>Nama<input class="field" name="name" required maxlength="80" value="${esc(f.name)}"></label>
           <div class="row2">
             <label>Harga (0 = custom)<input class="field" name="price" type="number" min="0" value="${f.price}"></label>
@@ -270,6 +272,12 @@ function renderAdminProducts(view, state) {
     resetDemoProducts()
     renderApp(document.querySelector('#app'), { page: 'admin-produk' })
   })
+
+  const catSel = view.querySelector('#pcategory')
+  const codeInp = view.querySelector('#pcode')
+  if (catSel && codeInp && !state.editingId) {
+    catSel.addEventListener('change', () => { codeInp.value = generateProductCode(catSel.value, listProducts()) })
+  }
 
   view.querySelector('#pform').addEventListener('submit', (e) => {
     e.preventDefault()

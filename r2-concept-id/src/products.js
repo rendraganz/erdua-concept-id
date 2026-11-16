@@ -2,6 +2,24 @@ import { createId, loadDB, saveDB } from './store.js'
 
 export const WHATSAPP_NUMBER = '6288228549752'
 
+const CAT_PREFIX = {
+  'Desain Livery': 'R2-LVR',
+  'Desain Logo': 'R2-LGO',
+  'Lettering & Stiker': 'R2-LTR',
+  'Decal & Apparel': 'R2-DCL',
+}
+
+export function generateProductCode(category, products = []) {
+  const prefix = CAT_PREFIX[category] || 'R2-PRD'
+  const re = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-(\\d+)$`, 'i')
+  let max = 0
+  for (const p of products) {
+    const m = String(p.code || '').match(re)
+    if (m) max = Math.max(max, parseInt(m[1], 10) || 0)
+  }
+  return `${prefix}-${String(max + 1).padStart(2, '0')}`
+}
+
 export function listProducts() {
   return [...loadDB().products].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0))
 }
