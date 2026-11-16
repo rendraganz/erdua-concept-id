@@ -232,7 +232,7 @@ function productCard(p) {
   const wa = waHref(p)
   const action = outOfStock
     ? `<button class="btn sm pri" disabled title="Stok habis">Pesan via WhatsApp</button>`
-    : `<a class="btn sm pri" href="${wa}" target="_blank" rel="noopener">Pesan via WhatsApp</a>`
+    : `<a class="btn sm pri" href="${wa}" target="_blank" rel="noopener noreferrer">Pesan via WhatsApp</a>`
   return `
     <article class="card glass">
       <div class="thumb ${hue(p)}">

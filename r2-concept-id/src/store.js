@@ -55,6 +55,12 @@ export function validateProduct(p) {
   return isValidProduct(p)
 }
 
+function normalizeImageUrl(url) {
+  const s = typeof url === 'string' ? url.trim() : ''
+  if (!s) return ''
+  return /^(\/|https:\/\/)/.test(s) ? s : ''
+}
+
 function normalizeStoredProduct(p, idx) {
   const name = String(p.name ?? p.nama).trim()
   const category = p.category ?? p.kategori
@@ -69,7 +75,7 @@ function normalizeStoredProduct(p, idx) {
     slot,
     featured: !!p.featured,
     description: typeof p.description === 'string' ? p.description : '',
-    imageUrl: typeof p.imageUrl === 'string' ? p.imageUrl : '',
+    imageUrl: normalizeImageUrl(p.imageUrl),
   }
 }
 
