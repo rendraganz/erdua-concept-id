@@ -1,5 +1,7 @@
 import { createId, loadDB, saveDB } from './store.js'
 
+export const WHATSAPP_NUMBER = '6288228549752'
+
 export function listProducts() {
   return [...loadDB().products].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0))
 }

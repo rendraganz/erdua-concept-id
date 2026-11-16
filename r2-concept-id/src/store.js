@@ -1,4 +1,5 @@
-const STORAGE_KEY = 'r2_concept_app_v2'
+const STORAGE_KEY = 'r2_concept_app_v3'
+export const PRODUCTS_KEY = 'erdua:products:v1'
 
 const CATEGORIES = ['Desain Livery', 'Desain Logo', 'Lettering & Stiker', 'Decal & Apparel']
 const DEFAULT_WA = '6288228549752'
@@ -21,10 +22,13 @@ const defaultData = {
     { id: 'u-buyer-1', name: 'Budi Pembeli', email: 'budi@mail.com', password: 'budi123', role: 'pembeli' },
     { id: 'u-buyer-2', name: 'Sari Pembeli', email: 'sari@mail.com', password: 'sari123', role: 'pembeli' },
   ],
-  products: seedProducts,
-  settings: { waNumber: DEFAULT_WA },
+  settings: { waNumber: DEFAULT_WA, bannerUrl: '' },
   session: null,
 }
+
+let lastProductsNotice = null
+export function getProductsNotice() { return lastProductsNotice }
+export function clearProductsNotice() { lastProductsNotice = null }
 
 function clone(v) {
   return JSON.parse(JSON.stringify(v))
@@ -34,30 +38,118 @@ export function getCategories() {
   return [...CATEGORIES]
 }
 
-export function loadDB() {
-  const raw = localStorage.getItem(STORAGE_KEY)
-  if (!raw) {
-    const seeded = clone(defaultData)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded))
-    return seeded
-  }
-  try {
-    const p = JSON.parse(raw)
-    return {
-      users: Array.isArray(p.users) ? p.users : clone(defaultData.users),
-      products: Array.isArray(p.products) ? p.products : clone(defaultData.products),
-      settings: { waNumber: DEFAULT_WA, ...(p.settings || {}) },
-      session: p.session ?? null,
-    }
-  } catch {
-    const seeded = clone(defaultData)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded))
-    return seeded
+function isValidProduct(p) {
+  if (!p || typeof p !== 'object') return false
+  const name = p.name ?? p.nama
+  const category = p.category ?? p.kategori
+  const price = p.price ?? p.harga
+  const stock = p.slot ?? p.stok
+  if (typeof name !== 'string' || !name.trim()) return false
+  if (!CATEGORIES.includes(category)) return false
+  if (typeof price !== 'number' || !Number.isFinite(price) || price < 0) return false
+  if (!Number.isInteger(stock) || stock < 0) return false
+  return true
+}
+
+function normalizeStoredProduct(p, idx) {
+  const name = String(p.name ?? p.nama).trim()
+  const category = p.category ?? p.kategori
+  const price = Number(p.price ?? p.harga)
+  const slot = Number(p.slot ?? p.stok)
+  return {
+    id: typeof p.id === 'string' && p.id ? p.id : `p-${idx + 1}`,
+    code: typeof p.code === 'string' ? p.code : `R2-${String(idx + 1).padStart(3, '0')}`,
+    name,
+    category,
+    price,
+    slot,
+    featured: !!p.featured,
+    description: typeof p.description === 'string' ? p.description : '',
+    imageUrl: typeof p.imageUrl === 'string' ? p.imageUrl : '',
   }
 }
 
+export function validateProductsArray(arr) {
+  if (!Array.isArray(arr)) return null
+  if (!arr.every(isValidProduct)) return null
+  return arr.map(normalizeStoredProduct)
+}
+
+export function loadProducts() {
+  const raw = localStorage.getItem(PRODUCTS_KEY)
+  if (raw === null) {
+    const seeded = clone(seedProducts)
+    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(seeded))
+    return seeded
+  }
+  try {
+    const parsed = JSON.parse(raw)
+    const valid = validateProductsArray(parsed)
+    if (!valid) throw new Error('invalid')
+    return valid
+  } catch {
+    const restored = clone(seedProducts)
+    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(restored))
+    lastProductsNotice = 'Data produk rusak/tidak valid. Data contoh telah dipulihkan.'
+    return restored
+  }
+}
+
+export function saveProducts(products) {
+  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products))
+}
+
+export function exportProductsJSON() {
+  return JSON.stringify(loadProducts(), null, 2)
+}
+
+export function importProductsJSON(jsonText) {
+  let parsed
+  try {
+    parsed = JSON.parse(jsonText)
+  } catch {
+    return { error: 'File JSON tidak valid (gagal parse).' }
+  }
+  const valid = validateProductsArray(parsed)
+  if (!valid) {
+    return { error: 'Struktur/tipe data produk tidak valid. Impor dibatalkan, data lama tidak diubah.' }
+  }
+  saveProducts(valid)
+  return { ok: true, count: valid.length }
+}
+
+export function resetDemoProducts() {
+  const restored = clone(seedProducts)
+  saveProducts(restored)
+  return restored
+}
+
+export function loadDB() {
+  const raw = localStorage.getItem(STORAGE_KEY)
+  let base
+  if (!raw) {
+    base = clone(defaultData)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(base))
+  } else {
+    try {
+      const p = JSON.parse(raw)
+      base = {
+        users: Array.isArray(p.users) ? p.users : clone(defaultData.users),
+        settings: { waNumber: DEFAULT_WA, bannerUrl: '', ...(p.settings || {}) },
+        session: p.session ?? null,
+      }
+    } catch {
+      base = clone(defaultData)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(base))
+    }
+  }
+  return { ...base, products: loadProducts() }
+}
+
 export function saveDB(db) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(db))
+  const { products, ...rest } = db
+  if (Array.isArray(products)) saveProducts(products)
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...clone(defaultData), ...rest, users: db.users || clone(defaultData.users), settings: { waNumber: DEFAULT_WA, bannerUrl: '', ...(db.settings || {}) }, session: db.session ?? null }))
 }
 
 export function getSettings() {
@@ -139,5 +231,41 @@ export function createId(prefix = 'id') {
 export function resetDB() {
   const seeded = clone(defaultData)
   localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded))
-  return seeded
+  saveProducts(clone(seedProducts))
+  return { ...seeded, products: clone(seedProducts) }
+}
+
+export function filterProducts(products, { query = '', kategori = 'Semua', sort = 'nama-asc' } = {}) {
+  const q = String(query || '').trim().toLowerCase()
+  const kat = kategori || 'Semua'
+  let list = (Array.isArray(products) ? products : []).filter((p) => {
+    const matchCat = kat === 'Semua' || p.category === kat
+    const name = String(p.name || '').toLowerCase()
+    const desc = String(p.description || '').toLowerCase()
+    const matchQuery = !q || name.includes(q) || desc.includes(q)
+    return matchCat && matchQuery
+  })
+
+  if (sort === 'harga-asc') {
+    list = [...list].sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0))
+  } else if (sort === 'harga-desc') {
+    list = [...list].sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0))
+  } else if (sort === 'nama-asc') {
+    list = [...list].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'id', { sensitivity: 'base' }))
+  }
+  return list
+}
+
+export function buildWhatsAppUrl(nomor, produk) {
+  const raw = String(nomor || '').trim().replace(/[\s\-()]/g, '')
+  const normalized = raw.startsWith('+') ? raw.slice(1) : raw
+  if (!/^\d{8,15}$/.test(normalized) || normalized.startsWith('0')) {
+    throw new Error('Nomor WhatsApp tujuan harus dalam format internasional (contoh: 6281234567890).')
+  }
+  const name = produk?.name ?? ''
+  const code = produk?.code ?? ''
+  const price = Number(produk?.price) || 0
+  const priceText = price > 0 ? `Rp ${price.toLocaleString('id-ID')}` : 'Harga Custom'
+  const message = `Halo R2 Concept ID, saya ingin memesan produk:\n- ${name} (${code})\n- Harga: ${priceText}\nMohon info ketersediaan dan prosesnya. Terima kasih.`
+  return `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`
 }
