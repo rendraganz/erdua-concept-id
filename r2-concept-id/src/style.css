@@ -159,25 +159,38 @@ textarea.field { min-height: 88px; resize: vertical; }
 select.field { cursor: pointer; }
 
 /* Banner & hero */
+.banner-hero { display: block; }
 .banner-full {
   margin: 12px 12px 0;
-  border-radius: 14px;
+  border-radius: 14px 14px 0 0;
   overflow: hidden;
   background: var(--surface-2);
   border: 1px solid var(--bd);
+  border-bottom: 0;
 }
-@media (min-width: 480px) { .banner-full { margin: 12px 20px 0; border-radius: 16px; } }
-@media (min-width: 700px) { .banner-full { margin: 12px 24px 0; } }
+@media (min-width: 480px) { .banner-full { margin: 12px 20px 0 20px; border-radius: 16px 16px 0 0; } }
+@media (min-width: 700px) { .banner-full { margin: 12px 24px 0 24px; } }
 @media (min-width: 1232px) { .banner-full { max-width: 1168px; margin: 12px auto 0; } }
 .banner-full img { display: block; width: 100%; height: auto; }
 .banner-fallback { height: 120px; background: linear-gradient(135deg, #0f172a 0%, #1b4332 55%, #339966 130%); }
 @media (min-width: 700px) { .banner-fallback { height: 160px; } }
 .banner-missing { min-height: 0; display: none; }
+.banner-fixed { }
 
-.hero-below { background: var(--bg); color: var(--text); border-bottom: 1px solid var(--bd); }
-.hero-below-inner { padding: 18px 16px 22px; }
+.hero-below {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--bd);
+  border-top: 0;
+  margin: 0 12px;
+  border-radius: 0 0 14px 14px;
+}
+@media (min-width: 480px) { .hero-below { margin: 0 20px; border-radius: 0 0 16px 16px; } }
+@media (min-width: 700px) { .hero-below { margin: 0 24px; } }
+@media (min-width: 1232px) { .hero-below { max-width: 1168px; margin: 0 auto; } }
+.hero-below-inner { padding: 16px 16px 20px; }
 @media (min-width: 480px) { .hero-below-inner { padding: 18px 20px 22px; } }
-@media (min-width: 700px) { .hero-below-inner { padding: 24px 24px 28px; } }
+@media (min-width: 700px) { .hero-below-inner { padding: 22px 24px 26px; } }
 .hero-below h1 { font-size: clamp(1.35rem, 5vw, 2.1rem); margin-bottom: 8px; color: var(--text); }
 .hero-below p { color: var(--muted); margin-bottom: 14px; max-width: 60ch; }
 .cta-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }

@@ -1,5 +1,7 @@
-import { getCategories, getCurrentUser, listUsers, login, logout, createUser, deleteUser, filterProducts, buildWhatsAppUrl, getProductsNotice, clearProductsNotice, exportProductsJSON, importProductsJSON, resetDemoProducts, getSettings, updateSettings } from './store.js'
+import { getCategories, getCurrentUser, listUsers, login, logout, createUser, deleteUser, filterProducts, buildWhatsAppUrl, getProductsNotice, clearProductsNotice, exportProductsJSON, importProductsJSON, resetDemoProducts } from './store.js'
 import { createProduct, deleteProduct, listProducts, updateProduct, WHATSAPP_NUMBER } from './products.js'
+
+const BANNER_URL = 'https://i.imgur.com/FcGHtpi.png'
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
@@ -120,22 +122,19 @@ function renderCatalog(view, user, state) {
   const sort = state.sort || 'nama-asc'
   const products = filterProducts(listProducts(), { query: q, kategori: cat, sort })
   const cats = ['Semua', ...getCategories()]
-  const bannerUrl = String(getSettings().bannerUrl || '').trim()
-  const showBanner = bannerUrl && /^(\/|https:\/\/)/.test(bannerUrl)
-
   view.innerHTML = `
-    ${showBanner
-      ? `<section class="banner-full"><img src="${esc(bannerUrl)}" alt="Banner R2 Concept ID" onerror="this.parentElement.classList.add('banner-missing')"></section>`
-      : `<section class="banner-full banner-fallback" aria-hidden="true"></section>`}
-    <header class="hero hero-below">
-      <div class="wrap hero-below-inner">
-        <h1>Livery, logo, dan lettering yang bikin armada Anda dikenal.</h1>
-        <p>Studio desain R2 Concept ID: livery truk & kendaraan, logo, custom lettering, dan decal. Konsultasi dulu, slot terbatas.</p>
-        <div class="cta-row">
-          <a class="btn pri" href="#katalog">Lihat Katalog</a>
+    <section class="banner-hero">
+      <div class="banner-full banner-fixed"><img src="${esc(BANNER_URL)}" alt="Banner R2 Concept ID"></div>
+      <header class="hero hero-below">
+        <div class="wrap hero-below-inner">
+          <h1>Livery, logo, dan lettering yang bikin armada Anda dikenal.</h1>
+          <p>Studio desain R2 Concept ID: livery truk & kendaraan, logo, custom lettering, dan decal. Konsultasi dulu, slot terbatas.</p>
+          <div class="cta-row">
+            <a class="btn pri" href="#katalog">Lihat Katalog</a>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </section>
     <section id="katalog" class="section"><div class="wrap">
       <div class="sec-h"><h2>Katalog Desain</h2></div>
       <div class="tools">
@@ -203,18 +202,8 @@ function renderAdminProducts(view, state) {
   const editing = state.editingId ? products.find((p) => p.id === state.editingId) : null
   const cats = getCategories()
   const f = editing || { code: '', name: '', category: cats[0], price: 0, slot: 0, description: '', imageUrl: '', featured: false }
-  const bannerUrl = String(getSettings().bannerUrl || '')
   view.innerHTML = `
     <section class="section"><div class="wrap">
-      <div class="glass panel" style="margin-bottom:14px">
-        <h2>Pengaturan Banner</h2>
-        <p class="muted small" style="margin-bottom:10px">Ganti gambar banner katalog menggunakan URL (harus diawali <code>/</code> atau <code>https://</code>). Kosongkan untuk memakai latar default.</p>
-        <form id="banner-form" class="row" style="align-items:end">
-          <label style="flex:1;min-width:240px">URL Gambar Banner<input class="field" name="bannerUrl" placeholder="https://..." value="${esc(bannerUrl)}"></label>
-          <button class="btn pri" type="submit">Simpan Banner</button>
-        </form>
-        <p id="banner-msg" class="muted small" style="margin-top:8px"></p>
-      </div>
       <div class="glass panel" style="margin-bottom:14px">
         <h2>Data Produk (Demo)</h2>
         <p class="muted small" style="margin-bottom:10px">Simpan/muat array produk di localStorage key <code>erdua:products:v1</code>. Validasi: nama string, kategori valid, harga &ge; 0, stok (slot) integer &ge; 0. Impor gagal tidak menghapus data lama.</p>
@@ -280,17 +269,6 @@ function renderAdminProducts(view, state) {
     if (!confirm('Reset data produk ke contoh demo?')) return
     resetDemoProducts()
     renderApp(document.querySelector('#app'), { page: 'admin-produk' })
-  })
-
-  view.querySelector('#banner-form')?.addEventListener('submit', (e) => {
-    e.preventDefault()
-    const url = String(new FormData(e.currentTarget).get('bannerUrl') || '').trim()
-    if (url && !/^(\/|https:\/\/)/.test(url)) {
-      const msg = view.querySelector('#banner-msg'); if (msg) { msg.textContent = 'URL banner harus diawali / atau https://'; msg.className = 'err small' }
-      return
-    }
-    updateSettings({ bannerUrl: url })
-    const msg = view.querySelector('#banner-msg'); if (msg) { msg.textContent = 'Banner berhasil disimpan.'; msg.className = 'muted small' }
   })
 
   view.querySelector('#pform').addEventListener('submit', (e) => {
@@ -363,6 +341,47 @@ function bindNav(root, user, state) {
   }))
   root.querySelector('#theme-toggle')?.addEventListener('click', () => {
     const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
+    const next = current === 'dark' ? 'light' : 'dark'
+    document.documentElement.setAttribute('data-theme', next)
+    try { localStorage.setItem('theme', next) } catch {}
+    renderApp(root, state)
+  })
+}
+k' ? 'dark' : 'light'
+    const next = current === 'dark' ? 'light' : 'dark'
+    document.documentElement.setAttribute('data-theme', next)
+    try { localStorage.setItem('theme', next) } catch {}
+    renderApp(root, state)
+  })
+}
+rAll('[data-page]').forEach((el) => el.addEventListener('click', (e) => {
+    e.preventDefault()
+    renderApp(root, { page: el.dataset.page })
+  }))
+  root.querySelector('#theme-toggle')?.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
+    const next = current === 'dark' ? 'light' : 'dark'
+    document.documentElement.setAttribute('data-theme', next)
+    try { localStorage.setItem('theme', next) } catch {}
+    renderApp(root, state)
+  })
+}
+k' ? 'dark' : 'light'
+    const next = current === 'dark' ? 'light' : 'dark'
+    document.documentElement.setAttribute('data-theme', next)
+    try { localStorage.setItem('theme', next) } catch {}
+    renderApp(root, state)
+  })
+}
+theme-toggle')?.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
+    const next = current === 'dark' ? 'light' : 'dark'
+    document.documentElement.setAttribute('data-theme', next)
+    try { localStorage.setItem('theme', next) } catch {}
+    renderApp(root, state)
+  })
+}
+k' ? 'dark' : 'light'
     const next = current === 'dark' ? 'light' : 'dark'
     document.documentElement.setAttribute('data-theme', next)
     try { localStorage.setItem('theme', next) } catch {}
