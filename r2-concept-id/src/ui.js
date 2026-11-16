@@ -186,10 +186,11 @@ function renderCatalog(view, user, state) {
       <div class="banner-full banner-fixed"><img src="${esc(BANNER_URL)}" alt="Banner R2 Concept ID"></div>
       <header class="hero hero-below">
         <div class="wrap hero-below-inner">
-          <h1>Livery, logo, dan lettering yang bikin armada Anda dikenal.</h1>
-          <p>Studio desain R2 Concept ID: livery truk & kendaraan, logo, custom lettering, dan decal. Konsultasi dulu, slot terbatas.</p>
+          <h1>R2ConceptID: Make With Experience</h1>
+          <p>Spesialis desain logo racing, decal motor, bak lukis, letter &amp; sticker.<br>Located in BWX, EAST JAVA, INA<br>Order, atau sekedar tanya-tanya? WA aja<br>#TanyaBolehKepoJangan</p>
           <div class="cta-row">
             <a class="btn pri" href="#katalog">Lihat Katalog</a>
+            <a class="btn" href="https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Halo R2 Concept ID, saya ingin bertanya/pesan desain.')}" target="_blank" rel="noopener noreferrer">Hubungi via WhatsApp</a>
           </div>
         </div>
       </header>
