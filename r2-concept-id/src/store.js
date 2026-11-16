@@ -51,6 +51,10 @@ function isValidProduct(p) {
   return true
 }
 
+export function validateProduct(p) {
+  return isValidProduct(p)
+}
+
 function normalizeStoredProduct(p, idx) {
   const name = String(p.name ?? p.nama).trim()
   const category = p.category ?? p.kategori
@@ -103,7 +107,7 @@ export function exportProductsJSON() {
   return JSON.stringify(loadProducts(), null, 2)
 }
 
-export function importProductsJSON(jsonText) {
+export function parseProductsJSON(jsonText) {
   let parsed
   try {
     parsed = JSON.parse(jsonText)
@@ -112,10 +116,21 @@ export function importProductsJSON(jsonText) {
   }
   const valid = validateProductsArray(parsed)
   if (!valid) {
-    return { error: 'Struktur/tipe data produk tidak valid. Impor dibatalkan, data lama tidak diubah.' }
+    return { error: 'Struktur/tipe data produk tidak valid.' }
   }
-  saveProducts(valid)
-  return { ok: true, count: valid.length }
+  return { data: valid }
+}
+
+export function importProductsJSON(jsonText) {
+  const res = parseProductsJSON(jsonText)
+  if (res.error) {
+    if (res.error === 'Struktur/tipe data produk tidak valid.') {
+      return { error: 'Struktur/tipe data produk tidak valid. Impor dibatalkan, data lama tidak diubah.' }
+    }
+    return res
+  }
+  saveProducts(res.data)
+  return { ok: true, count: res.data.length }
 }
 
 export function resetDemoProducts() {

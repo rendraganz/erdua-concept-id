@@ -1,5 +1,6 @@
 import { getCategories, getCurrentUser, listUsers, login, logout, register, createUser, deleteUser, filterProducts, buildWhatsAppUrl, getProductsNotice, clearProductsNotice, exportProductsJSON, importProductsJSON, resetDemoProducts } from './store.js'
 import { createProduct, deleteProduct, listProducts, updateProduct, WHATSAPP_NUMBER, generateProductCode } from './products.js'
+import { formatRupiah } from './format.js'
 
 const BANNER_URL = 'https://i.imgur.com/FcGHtpi.png'
 const LOGIN_BANNER_URL = 'https://i.imgur.com/WoCkdb7.png'
@@ -7,10 +8,7 @@ const LOGIN_BANNER_URL = 'https://i.imgur.com/WoCkdb7.png'
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 }
-function rp(n) {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
-}
-function harga(p) { return p.price > 0 ? rp(p.price) : 'Harga Custom / Konsultasi' }
+function harga(p) { return p.price > 0 ? formatRupiah(p.price) : 'Harga Custom / Konsultasi' }
 function slotInfo(p) {
   if (p.slot > 3) return { text: `Slot tersedia: ${p.slot}`, cls: 's-ok' }
   if (p.slot > 0) return { text: `Sisa ${p.slot} slot`, cls: 's-low' }
