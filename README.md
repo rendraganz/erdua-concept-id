@@ -19,12 +19,14 @@ Aplikasi web statis (Vite + Vanilla JavaScript) untuk katalog dan pemesanan laya
 | `admin` | Kelola produk |
 | `superadmin` | Kelola produk & kelola user |
 
-### Akun demo (bawaan)
-- Superadmin: `superadmin@r2concept.id` / `super123`
-- Admin: `admin@r2concept.id` / `admin123`
-- Pembeli: `budi@mail.com` / `budi123`, `sari@mail.com` / `sari123`
+### Akun demo (dummy) untuk login
+Data akun berikut disediakan untuk keperluan demo/pengujian login:
 
-> Kredensial di atas hanya untuk demo lokal/prototipe.
+- **Superadmin** (kelola produk & user): `superadmin@r2concept.id` / `super123`
+- **Admin** (kelola produk): `admin@r2concept.id` / `admin123`
+- **Pembeli** (beli via WhatsApp): `budi@mail.com` / `budi123`, `sari@mail.com` / `sari123`
+
+> Kredensial di atas hanya untuk demo lokal/prototipe. Form login pada aplikasi mengarahkan ke README ini untuk informasi akun demo.
 
 ## Tech stack
 - [Vite](https://vite.dev/) (vanilla JS, build statis)
