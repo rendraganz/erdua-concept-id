@@ -78,12 +78,27 @@ function nav(user, page) {
   const theme = (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
   const iconSun = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41"/></svg>`
   const iconMoon = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>`
+  const iconMenu = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`
+  const iconClose = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
   const themeIcon = theme === 'dark' ? iconSun : iconMoon
   const themeTitle = theme === 'dark' ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'
-  const right = user
+  const actions = user
     ? `<button class="btn sm icon-btn" id="theme-toggle" aria-label="${themeTitle}" title="${themeTitle}">${themeIcon}</button><span class="user-chip">${esc(user.name)} <b>(${esc(user.role)})</b></span><button class="btn sm" id="logout-btn">Logout</button>`
     : `<button class="btn sm icon-btn" id="theme-toggle" aria-label="${themeTitle}" title="${themeTitle}">${themeIcon}</button><button class="btn sm pri" id="go-login">Login</button>`
-  return `<nav class="top"><div class="wrap navin"><div class="logo">R2 <b>Concept</b> ID</div><div class="tabs">${tabs}</div><div class="navr">${right}</div></div></nav>`
+  return `<nav class="top">
+    <div class="nav-container navin">
+      <div class="nav-left"><div class="logo">R2 <b>Concept</b> ID</div></div>
+      <div class="nav-center">${tabs}</div>
+      <div class="nav-right">${actions}</div>
+      <button class="btn sm icon-btn nav-burger" id="nav-burger" aria-label="Buka menu" aria-expanded="false" aria-controls="nav-mobile">${iconMenu}</button>
+    </div>
+    <div class="nav-mobile" id="nav-mobile" data-open="false" data-icon-menu='${iconMenu.replace(/'/g, "&#39;")}' data-icon-close='${iconClose.replace(/'/g, "&#39;")}'>
+      <div class="nav-mobile-inner">
+        <div class="nav-mobile-center">${tabs}</div>
+        <div class="nav-mobile-right">${actions}</div>
+      </div>
+    </div>
+  </nav>`
 }
 
 function renderLogin(view) {
@@ -366,17 +381,29 @@ function renderAdminUsers(view) {
 }
 
 function bindNav(root, user, state) {
-  root.querySelector('#logout-btn')?.addEventListener('click', () => { logout(); renderApp(root, { page: 'katalog' }) })
-  root.querySelector('#go-login')?.addEventListener('click', () => renderLogin(root.querySelector('#view')))
+  root.querySelectorAll('#logout-btn').forEach((el) => el.addEventListener('click', () => { logout(); renderApp(root, { page: 'katalog' }) }))
+  root.querySelectorAll('#go-login').forEach((el) => el.addEventListener('click', () => renderLogin(root.querySelector('#view'))))
   root.querySelectorAll('[data-page]').forEach((el) => el.addEventListener('click', (e) => {
     e.preventDefault()
     renderApp(root, { page: el.dataset.page })
   }))
-  root.querySelector('#theme-toggle')?.addEventListener('click', () => {
+  root.querySelectorAll('#theme-toggle').forEach((el) => el.addEventListener('click', () => {
     const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
     const next = current === 'dark' ? 'light' : 'dark'
     document.documentElement.setAttribute('data-theme', next)
     try { localStorage.setItem('theme', next) } catch {}
     renderApp(root, state)
-  })
+  }))
+  const burger = root.querySelector('#nav-burger')
+  const mobile = root.querySelector('#nav-mobile')
+  if (burger && mobile) {
+    const sync = (open) => {
+      mobile.setAttribute('data-open', open ? 'true' : 'false')
+      burger.setAttribute('aria-expanded', open ? 'true' : 'false')
+      burger.setAttribute('aria-label', open ? 'Tutup menu' : 'Buka menu')
+      burger.innerHTML = open ? mobile.dataset.iconClose : mobile.dataset.iconMenu
+    }
+    burger.addEventListener('click', () => sync(mobile.getAttribute('data-open') !== 'true'))
+    mobile.querySelectorAll('[data-page]').forEach((el) => el.addEventListener('click', () => sync(false)))
+  }
 }
