@@ -73,9 +73,11 @@ function nav(user, page) {
       tabs = `<a href="#" class="tab" data-page="katalog" aria-current="page">Katalog</a>`
     }
   }
+  const theme = (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+  const themeLabel = theme === 'dark' ? '☀️ Terang' : '🌙 Gelap'
   const right = user
-    ? `<span class="user-chip">${esc(user.name)} <b>(${esc(user.role)})</b></span><button class="btn sm" id="logout-btn">Logout</button>`
-    : `<button class="btn sm pri" id="go-login">Login</button>`
+    ? `<button class="btn sm" id="theme-toggle" aria-label="Ganti tema">${themeLabel}</button><span class="user-chip">${esc(user.name)} <b>(${esc(user.role)})</b></span><button class="btn sm" id="logout-btn">Logout</button>`
+    : `<button class="btn sm" id="theme-toggle" aria-label="Ganti tema">${themeLabel}</button><button class="btn sm pri" id="go-login">Login</button>`
   return `<nav class="top"><div class="wrap navin"><div class="logo">R2 <b>Concept</b> ID</div><div class="tabs">${tabs}</div><div class="navr">${right}</div></div></nav>`
 }
 
@@ -356,5 +358,11 @@ function bindNav(root, user, state) {
     e.preventDefault()
     renderApp(root, { page: el.dataset.page })
   }))
-
+  root.querySelector('#theme-toggle')?.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
+    const next = current === 'dark' ? 'light' : 'dark'
+    document.documentElement.setAttribute('data-theme', next)
+    try { localStorage.setItem('theme', next) } catch {}
+    renderApp(root, state)
+  })
 }
