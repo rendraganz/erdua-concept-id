@@ -126,7 +126,7 @@ function renderLogin(view, mode = 'login') {
             <p id="auth-err" class="err"></p>
           </form>
           <p class="muted small auth-switch">${isLogin ? 'Belum punya akun? <a href="#" id="to-register">Daftar</a>' : 'Sudah punya akun? <a href="#" id="to-login">Login</a>'}</p>
-          ${isLogin ? `<div class="hint"><b>Informasi login:</b><br>Data akun demo (dummy) untuk login tersedia di README proyek.<br>Repo GitHub: <a href="https://github.com/rendraganz/erdua-concept-id.git" target="_blank" rel="noopener noreferrer">github.com/rendraganz/erdua-concept-id</a></div>` : ''}
+          ${isLogin ? `<div class="hint"><b>Informasi login:</b><br>Data akun demo (dummy) dan data produk (json) untuk login tersedia di README proyek.<br>Repo GitHub: <a href="https://github.com/rendraganz/erdua-concept-id.git" target="_blank" rel="noopener noreferrer">github.com/rendraganz/erdua-concept-id</a></div>` : ''}
         </div>
       </div>
     </section>
