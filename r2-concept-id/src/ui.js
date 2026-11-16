@@ -87,22 +87,34 @@ function nav(user, page) {
 }
 
 function renderLogin(view) {
+  const eye = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>`
+  const eyeOff = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.8 21.8 0 0 1 5.06-5.94"/><path d="M9.9 4.24A10.94 10.94 0 0 1 12 5c7 0 11 7 11 7a21.8 21.8 0 0 1-3.17 4.13"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>`
   view.innerHTML = `
     <section class="auth">
-      <div class="glass panel auth-box">
-        <h1>Masuk ke R2 Concept ID</h1>
-        <p class="muted">Login untuk mengelola produk/user (admin) atau melakukan pemesanan (pembeli).</p>
-        <form id="login-form" class="stack">
-          <label>Email<input class="field" name="email" type="email" required placeholder="admin@r2concept.id"></label>
-          <label>Password<input class="field" name="password" type="password" required placeholder="••••••"></label>
-          <button class="btn pri" type="submit">Masuk</button>
-          <p id="login-err" class="err"></p>
-        </form>
-        <div class="hint glass">
-          <b>Akun dummy (3 role):</b><br>
-          Superadmin (kelola produk & user): superadmin@r2concept.id / super123<br>
-          Admin (kelola produk): admin@r2concept.id / admin123<br>
-          Pembeli (beli via WhatsApp): budi@mail.com / budi123
+      <div class="glass auth-split">
+        <div class="auth-media" aria-hidden="true">
+          <img src="${esc(BANNER_URL)}" alt="Banner R2 Concept ID">
+        </div>
+        <div class="auth-form panel">
+          <h1>Masuk ke R2 Concept ID</h1>
+          <p class="muted">Login untuk mengelola produk/user (admin) atau melakukan pemesanan (pembeli).</p>
+          <form id="login-form" class="stack">
+            <label>Email<input class="field" name="email" type="email" required placeholder="admin@r2concept.id"></label>
+            <label>Password
+              <div class="password-wrap">
+                <input class="field" id="login-password" name="password" type="password" required placeholder="••••••">
+                <button type="button" class="pass-toggle" id="toggle-pass" aria-label="Tampilkan password" title="Tampilkan password">${eye}</button>
+              </div>
+            </label>
+            <button class="btn pri" type="submit">Masuk</button>
+            <p id="login-err" class="err"></p>
+          </form>
+          <div class="hint">
+            <b>Akun dummy (3 role):</b><br>
+            Superadmin: superadmin@r2concept.id / super123<br>
+            Admin: admin@r2concept.id / admin123<br>
+            Pembeli: budi@mail.com / budi123
+          </div>
         </div>
       </div>
     </section>
@@ -114,6 +126,19 @@ function renderLogin(view) {
     if (!u) { view.querySelector('#login-err').textContent = 'Email atau password salah.'; return }
     renderApp(document.querySelector('#app'), { page: (u.role === 'admin' || u.role === 'superadmin') ? 'admin-produk' : 'katalog' })
   })
+  const toggle = view.querySelector('#toggle-pass')
+  const pass = view.querySelector('#login-password')
+  if (toggle && pass) {
+    toggle.dataset.eye = eye
+    toggle.dataset.eyeoff = eyeOff
+    toggle.addEventListener('click', () => {
+      const show = pass.type === 'password'
+      pass.type = show ? 'text' : 'password'
+      toggle.innerHTML = show ? toggle.dataset.eyeoff : toggle.dataset.eye
+      toggle.setAttribute('aria-label', show ? 'Sembunyikan password' : 'Tampilkan password')
+      toggle.setAttribute('title', show ? 'Sembunyikan password' : 'Tampilkan password')
+    })
+  }
 }
 
 function renderCatalog(view, user, state) {
