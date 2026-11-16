@@ -1,5 +1,5 @@
-import { getCategories, getCurrentUser, getSettings, listUsers, login, logout, createUser, deleteUser } from './store.js'
-import { createProduct, deleteProduct, listProducts, updateProduct } from './products.js'
+import { getCategories, getCurrentUser, listUsers, login, logout, createUser, deleteUser, filterProducts, buildWhatsAppUrl, getProductsNotice, clearProductsNotice, exportProductsJSON, importProductsJSON, resetDemoProducts, getSettings, updateSettings } from './store.js'
+import { createProduct, deleteProduct, listProducts, updateProduct, WHATSAPP_NUMBER } from './products.js'
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
@@ -18,12 +18,12 @@ function hue(p) {
   return `h${i}`
 }
 
-function waLink(product) {
-  const wa = (getSettings().waNumber || '6288228549752').replace(/\D/g, '')
-  const msg = product.slot === 0
-    ? `Hai R2 Concept, saya minat dengan product ${product.category} (${product.code} - ${product.name}).\nSaya lihat antrean sedang penuh, bisa masuk waitlist? Terima kasih!`
-    : `Hai R2 Concept, saya minat dengan product ${product.category} (${product.code} - ${product.name}).\nEstimasi harga: ${product.price > 0 ? rp(product.price) : 'Harga Custom'}.\nMohon info ketersediaan slot dan prosesnya. Terima kasih!`
-  return `https://wa.me/${wa}?text=${encodeURIComponent(msg)}`
+function waHref(product) {
+  try {
+    return buildWhatsAppUrl(WHATSAPP_NUMBER, product)
+  } catch {
+    return '#'
+  }
 }
 
 function canManageProducts(user) {
@@ -33,17 +33,19 @@ function canManageUsers(user) {
   return user && user.role === 'superadmin'
 }
 
-export function renderApp(root, state = { page: 'katalog', q: '', cat: 'Semua', editingId: null }) {
+export function renderApp(root, state = { page: 'katalog', q: '', cat: 'Semua', sort: 'nama-asc', editingId: null }) {
   const user = getCurrentUser()
   let page = state.page || 'katalog'
 
   if (page === 'admin-user' && !canManageUsers(user)) page = canManageProducts(user) ? 'admin-produk' : 'katalog'
   if (page === 'admin-produk' && !canManageProducts(user)) page = 'katalog'
 
+  const notice = getProductsNotice()
   root.innerHTML = `
     ${nav(user, page)}
+    ${notice ? `<div class="notice wrap"><div class="notice-inner glass"><span>${esc(notice)}</span><button class="btn sm" id="dismiss-notice">Tutup</button></div></div>` : ''}
     <main id="view"></main>
-    <footer class="foot">© R2 Concept ID — Livery, Logo, Lettering &amp; Decal. Data tersimpan di perangkat ini (localStorage).</footer>
+    <footer class="foot">© R2 Concept ID — Livery, Logo, Lettering &amp; Decal. Data produk: <code>erdua:products:v1</code> (localStorage).</footer>
   `
   const view = root.querySelector('#view')
   if (!user) {
@@ -54,6 +56,7 @@ export function renderApp(root, state = { page: 'katalog', q: '', cat: 'Semua', 
     renderCatalog(view, user, { ...state, page })
   }
   bindNav(root, user, { ...state, page })
+  root.querySelector('#dismiss-notice')?.addEventListener('click', () => { clearProductsNotice(); renderApp(root, { ...state, page }) })
 }
 
 function nav(user, page) {
@@ -107,50 +110,66 @@ function renderLogin(view) {
 }
 
 function renderCatalog(view, user, state) {
-  const q = (state.q || '').toLowerCase()
+  const q = state.q || ''
   const cat = state.cat || 'Semua'
-  const products = listProducts().filter((p) => (cat === 'Semua' || p.category === cat) && (p.name + ' ' + p.code).toLowerCase().includes(q))
+  const sort = state.sort || 'nama-asc'
+  const products = filterProducts(listProducts(), { query: q, kategori: cat, sort })
   const cats = ['Semua', ...getCategories()]
+  const bannerUrl = String(getSettings().bannerUrl || '').trim()
+  const showBanner = bannerUrl && /^(\/|https:\/\/)/.test(bannerUrl)
 
   view.innerHTML = `
-    <header class="hero">
-      <div class="stripe"></div>
-      <div class="glass hero-inner">
+    ${showBanner
+      ? `<section class="banner-full"><img src="${esc(bannerUrl)}" alt="Banner R2 Concept ID" onerror="this.parentElement.classList.add('banner-missing')"></section>`
+      : `<section class="banner-full banner-fallback" aria-hidden="true"></section>`}
+    <header class="hero hero-below">
+      <div class="wrap hero-below-inner">
         <h1>Livery, logo, dan lettering yang bikin armada Anda dikenal.</h1>
         <p>Studio desain R2 Concept ID: livery truk & kendaraan, logo, custom lettering, dan decal. Konsultasi dulu, slot terbatas.</p>
         <div class="cta-row">
           <a class="btn pri" href="#katalog">Lihat Katalog</a>
-          ${!user ? '<span class="muted small">Login sebagai pembeli untuk memesan via WhatsApp.</span>' : ''}
         </div>
       </div>
     </header>
     <section id="katalog" class="section"><div class="wrap">
       <div class="sec-h"><h2>Katalog Desain</h2></div>
       <div class="tools">
-        <input class="field" id="q" type="search" placeholder="Cari nama atau kode desain" value="${esc(state.q || '')}">
+        <input class="field" id="q" type="search" placeholder="Cari nama atau deskripsi" value="${esc(q)}">
+        <select class="field" id="sort" aria-label="Urutkan">
+          <option value="nama-asc" ${sort === 'nama-asc' ? 'selected' : ''}>Nama A–Z</option>
+          <option value="harga-asc" ${sort === 'harga-asc' ? 'selected' : ''}>Harga termurah</option>
+          <option value="harga-desc" ${sort === 'harga-desc' ? 'selected' : ''}>Harga termahal</option>
+        </select>
         <div class="chips">${cats.map((c) => `<button class="chip" data-cat="${esc(c)}" ${cat === c ? 'aria-pressed="true"' : ''}>${esc(c)}</button>`).join('')}</div>
       </div>
       <div class="grid">
-        ${products.length ? products.map((p) => productCard(p, user)).join('') : `<div class="empty glass"><h3>Belum ada desain yang cocok</h3><p>Coba kata kunci lain atau ubah filter.</p></div>`}
+        ${products.length
+          ? products.map((p) => productCard(p)).join('')
+          : `<div class="empty glass"><h3>Hasil tidak ditemukan</h3><p>Tidak ada produk yang cocok dengan pencarian/filter Anda. Coba ubah kata kunci, kategori, atau urutan.</p></div>`}
       </div>
     </div></section>
   `
 
   view.querySelectorAll('[data-cat]').forEach((b) => b.addEventListener('click', () => {
-    renderApp(document.querySelector('#app'), { ...state, page: 'katalog', cat: b.dataset.cat })
+    renderApp(document.querySelector('#app'), { ...state, page: 'katalog', cat: b.dataset.cat, sort, q })
   }))
+  view.querySelector('#sort')?.addEventListener('change', (e) => {
+    renderApp(document.querySelector('#app'), { ...state, page: 'katalog', sort: e.target.value, cat, q })
+  })
   let db
   view.querySelector('#q')?.addEventListener('input', (e) => {
     clearTimeout(db)
-    db = setTimeout(() => renderApp(document.querySelector('#app'), { ...state, page: 'katalog', q: e.target.value }), 250)
+    db = setTimeout(() => renderApp(document.querySelector('#app'), { ...state, page: 'katalog', q: e.target.value, cat, sort }), 250)
   })
 }
 
-function productCard(p, user) {
+function productCard(p) {
   const s = slotInfo(p)
-  const action = user && user.role === 'pembeli'
-    ? `<a class="btn sm pri" href="${waLink(p)}" target="_blank" rel="noopener">${p.slot ? 'Beli via WhatsApp' : 'Tanya Waitlist'}</a>`
-    : (!user ? `<a class="btn sm pri" href="#" data-require-login>Beli via WhatsApp</a>` : '')
+  const outOfStock = Number(p.slot) === 0
+  const wa = waHref(p)
+  const action = outOfStock
+    ? `<button class="btn sm pri" disabled title="Stok habis">Pesan via WhatsApp</button>`
+    : `<a class="btn sm pri" href="${wa}" target="_blank" rel="noopener">Pesan via WhatsApp</a>`
   return `
     <article class="card glass">
       <div class="thumb ${hue(p)}">
@@ -179,8 +198,30 @@ function renderAdminProducts(view, state) {
   const editing = state.editingId ? products.find((p) => p.id === state.editingId) : null
   const cats = getCategories()
   const f = editing || { code: '', name: '', category: cats[0], price: 0, slot: 0, description: '', imageUrl: '', featured: false }
+  const bannerUrl = String(getSettings().bannerUrl || '')
   view.innerHTML = `
-    <section class="section"><div class="wrap admin-grid">
+    <section class="section"><div class="wrap">
+      <div class="glass panel" style="margin-bottom:14px">
+        <h2>Pengaturan Banner</h2>
+        <p class="muted small" style="margin-bottom:10px">Ganti gambar banner katalog menggunakan URL (harus diawali <code>/</code> atau <code>https://</code>). Kosongkan untuk memakai latar default.</p>
+        <form id="banner-form" class="row" style="align-items:end">
+          <label style="flex:1;min-width:240px">URL Gambar Banner<input class="field" name="bannerUrl" placeholder="https://..." value="${esc(bannerUrl)}"></label>
+          <button class="btn pri" type="submit">Simpan Banner</button>
+        </form>
+        <p id="banner-msg" class="muted small" style="margin-top:8px"></p>
+      </div>
+      <div class="glass panel" style="margin-bottom:14px">
+        <h2>Data Produk (Demo)</h2>
+        <p class="muted small" style="margin-bottom:10px">Simpan/muat array produk di localStorage key <code>erdua:products:v1</code>. Validasi: nama string, kategori valid, harga &ge; 0, stok (slot) integer &ge; 0. Impor gagal tidak menghapus data lama.</p>
+        <div class="row" style="margin-bottom:8px">
+          <button class="btn sm" id="export-json">Export JSON</button>
+          <label class="btn sm" style="cursor:pointer">Import JSON<input id="import-json" type="file" accept="application/json,.json" hidden></label>
+          <button class="btn sm dng" id="reset-demo">Reset Demo</button>
+        </div>
+        <p id="data-msg" class="muted small"></p>
+      </div>
+    </div>
+    <div class="wrap admin-grid">
       <div class="glass panel">
         <h2>${editing ? 'Edit Produk' : 'Tambah Produk'}</h2>
         <form id="pform" class="stack" data-edit-id="${esc(editing?.id || '')}">
@@ -210,6 +251,42 @@ function renderAdminProducts(view, state) {
       </div>
     </div></section>
   `
+
+  view.querySelector('#export-json')?.addEventListener('click', () => {
+    const blob = new Blob([exportProductsJSON()], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = 'erdua-products.json'
+    a.click()
+    URL.revokeObjectURL(a.href)
+    const msg = view.querySelector('#data-msg'); if (msg) msg.textContent = 'Produk diekspor ke JSON.'
+  })
+  view.querySelector('#import-json')?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const text = await file.text()
+    const res = importProductsJSON(text)
+    const msg = view.querySelector('#data-msg')
+    if (res.error) { if (msg) { msg.textContent = res.error; msg.className = 'err small' } }
+    else { if (msg) { msg.textContent = `Impor berhasil (${res.count} produk).`; msg.className = 'muted small' } renderApp(document.querySelector('#app'), { page: 'admin-produk' }) }
+    e.target.value = ''
+  })
+  view.querySelector('#reset-demo')?.addEventListener('click', () => {
+    if (!confirm('Reset data produk ke contoh demo?')) return
+    resetDemoProducts()
+    renderApp(document.querySelector('#app'), { page: 'admin-produk' })
+  })
+
+  view.querySelector('#banner-form')?.addEventListener('submit', (e) => {
+    e.preventDefault()
+    const url = String(new FormData(e.currentTarget).get('bannerUrl') || '').trim()
+    if (url && !/^(\/|https:\/\/)/.test(url)) {
+      const msg = view.querySelector('#banner-msg'); if (msg) { msg.textContent = 'URL banner harus diawali / atau https://'; msg.className = 'err small' }
+      return
+    }
+    updateSettings({ bannerUrl: url })
+    const msg = view.querySelector('#banner-msg'); if (msg) { msg.textContent = 'Banner berhasil disimpan.'; msg.className = 'muted small' }
+  })
 
   view.querySelector('#pform').addEventListener('submit', (e) => {
     e.preventDefault()
@@ -279,8 +356,5 @@ function bindNav(root, user, state) {
     e.preventDefault()
     renderApp(root, { page: el.dataset.page })
   }))
-  root.querySelectorAll('[data-require-login]').forEach((el) => el.addEventListener('click', (e) => {
-    e.preventDefault()
-    renderLogin(root.querySelector('#view'))
-  }))
+
 }
