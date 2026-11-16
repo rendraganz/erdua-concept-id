@@ -2,7 +2,7 @@ const STORAGE_KEY = 'r2_concept_app_v3'
 export const PRODUCTS_KEY = 'erdua:products:v1'
 
 const CATEGORIES = ['Desain Livery', 'Desain Logo', 'Lettering & Stiker', 'Decal & Apparel']
-const DEFAULT_WA = '6288228549752'
+const DEFAULT_WA = '6280000000000' // dummy, ganti dengan nomor WhatsApp admin
 
 const seedProducts = [
   { id: 'p1', code: 'R2-LVR-01', name: 'Livery Truk Trailer Full Wrap', category: CATEGORIES[0], price: 1500000, slot: 3, featured: true, description: 'File master: CDR (vektor) + AI + PNG preview resolusi tinggi. Termasuk 2x revisi minor.', imageUrl: '' },

@@ -1,6 +1,6 @@
 import { createId, loadDB, saveDB } from './store.js'
 
-export const WHATSAPP_NUMBER = '6288228549752'
+export const WHATSAPP_NUMBER = '6280000000000' // dummy, ganti dengan nomor WhatsApp admin
 
 const CAT_PREFIX = {
   'Desain Livery': 'R2-LVR',

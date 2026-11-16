@@ -1,0 +1,46 @@
+[
+  {
+    "id": "p-1794813985322-c6tu6",
+    "code": "R2-LVR-05",
+    "name": "Desain Logo Truck Full Concept",
+    "category": "Desain Livery",
+    "price": 9500000,
+    "slot": 1000,
+    "featured": true,
+    "description": "Desain truk full concept (bak lukis, full sticker kanan, kiri, depan)",
+    "imageUrl": "https://i.imgur.com/mwNwpJP.png"
+  },
+  {
+    "id": "p-1794813817011-grzvr",
+    "code": "R2-LGO-03",
+    "name": "Desain Logo Racing, Logo Nomor Start, Custom Logo",
+    "category": "Desain Logo",
+    "price": 200000,
+    "slot": 999,
+    "featured": true,
+    "description": "Bebas custom nama, warna",
+    "imageUrl": "https://i.imgur.com/lhqss9x.png"
+  },
+  {
+    "id": "p-1794813696874-wt1fz",
+    "code": "R2-LVR-04",
+    "name": "Desain Logo Truck Simple Concept",
+    "category": "Desain Livery",
+    "price": 6500000,
+    "slot": 997,
+    "featured": true,
+    "description": "Desain simple, tidak banyak vector atau lukisan. hanya letter simple(sudah full truck)",
+    "imageUrl": "https://i.imgur.com/9PaqywA.png"
+  },
+  {
+    "id": "p5",
+    "code": "R2-LGO-02",
+    "name": "Logo Custom",
+    "category": "Desain Logo",
+    "price": 800000,
+    "slot": 10000,
+    "featured": false,
+    "description": "Logo profesional untuk komunitas, atau perusahan kamu",
+    "imageUrl": "https://i.imgur.com/grF50IX.png"
+  }
+]
