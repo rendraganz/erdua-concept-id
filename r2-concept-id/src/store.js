@@ -172,6 +172,15 @@ export function login(email, password) {
   return sanitizeUser(user)
 }
 
+export function register(data) {
+  const res = createUser({ ...data, role: 'pembeli' })
+  if (res.error) return res
+  const db = loadDB()
+  db.session = { userId: res.user.id }
+  saveDB(db)
+  return { user: res.user }
+}
+
 export function logout() {
   const db = loadDB()
   db.session = null

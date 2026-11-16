@@ -1,4 +1,4 @@
-import { getCategories, getCurrentUser, listUsers, login, logout, createUser, deleteUser, filterProducts, buildWhatsAppUrl, getProductsNotice, clearProductsNotice, exportProductsJSON, importProductsJSON, resetDemoProducts } from './store.js'
+import { getCategories, getCurrentUser, listUsers, login, logout, register, createUser, deleteUser, filterProducts, buildWhatsAppUrl, getProductsNotice, clearProductsNotice, exportProductsJSON, importProductsJSON, resetDemoProducts } from './store.js'
 import { createProduct, deleteProduct, listProducts, updateProduct, WHATSAPP_NUMBER, generateProductCode } from './products.js'
 
 const BANNER_URL = 'https://i.imgur.com/FcGHtpi.png'
@@ -52,7 +52,7 @@ export function renderApp(root, state = { page: 'katalog', q: '', cat: 'Semua', 
   `
   const view = root.querySelector('#view')
   if (!user) {
-    renderLogin(view)
+    renderLogin(view, state.authMode || 'login')
   } else if (page === 'admin-produk' || page === 'admin-user') {
     renderAdmin(view, user, { ...state, page })
   } else {
@@ -102,9 +102,10 @@ function nav(user, page) {
   </nav>`
 }
 
-function renderLogin(view) {
+function renderLogin(view, mode = 'login') {
   const eye = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>`
   const eyeOff = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.8 21.8 0 0 1 5.06-5.94"/><path d="M9.9 4.24A10.94 10.94 0 0 1 12 5c7 0 11 7 11 7a21.8 21.8 0 0 1-3.17 4.13"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>`
+  const isLogin = mode === 'login'
   view.innerHTML = `
     <section class="auth">
       <div class="glass auth-split">
@@ -112,38 +113,31 @@ function renderLogin(view) {
           <img src="${esc(LOGIN_BANNER_URL)}" alt="Banner R2 Concept ID">
         </div>
         <div class="auth-form panel">
-          <h1>Masuk ke R2 Concept ID</h1>
-          <p class="muted">Login untuk mengelola produk/user (admin) atau melakukan pemesanan (pembeli).</p>
-          <form id="login-form" class="stack">
-            <label>Email<input class="field" name="email" type="email" required placeholder="admin@r2concept.id"></label>
+          <h1>${isLogin ? 'Masuk' : 'Daftar'} ke R2 Concept ID</h1>
+          <p class="muted">${isLogin ? 'Masuk untuk mengelola atau melakukan pemesanan.' : 'Buat akun pembeli untuk melakukan pemesanan via WhatsApp.'}</p>
+          <form id="auth-form" class="stack">
+            ${isLogin ? '' : '<label>Nama<input class="field" name="name" type="text" required placeholder="Nama lengkap"></label>'}
+            <label>Email<input class="field" id="auth-email" name="email" type="email" required placeholder="nama@email.com"></label>
             <label>Password
               <div class="password-wrap">
-                <input class="field" id="login-password" name="password" type="password" required placeholder="••••••">
+                <input class="field" id="auth-password" name="password" type="password" required placeholder="••••••">
                 <button type="button" class="pass-toggle" id="toggle-pass" aria-label="Tampilkan password" title="Tampilkan password">${eye}</button>
               </div>
             </label>
-            <button class="btn pri" type="submit">Masuk</button>
-            <p id="login-err" class="err"></p>
+            <button class="btn pri" type="submit">${isLogin ? 'Masuk' : 'Daftar'}</button>
+            <p id="auth-err" class="err"></p>
           </form>
-          <div class="hint">
-            <b>Akun dummy (3 role):</b><br>
-            Superadmin: superadmin@r2concept.id / super123<br>
-            Admin: admin@r2concept.id / admin123<br>
-            Pembeli: budi@mail.com / budi123
-          </div>
+          <p class="muted small auth-switch">${isLogin ? 'Belum punya akun? <a href="#" id="to-register">Daftar</a>' : 'Sudah punya akun? <a href="#" id="to-login">Login</a>'}</p>
+          ${isLogin ? `<div class="hint"><b>Akun dummy:</b><br>Superadmin: superadmin@r2concept.id / super123<br>Admin: admin@r2concept.id / admin123<br>Pembeli: budi@mail.com / budi123</div>` : ''}
         </div>
       </div>
     </section>
   `
-  view.querySelector('#login-form').addEventListener('submit', (e) => {
-    e.preventDefault()
-    const fd = new FormData(e.currentTarget)
-    const u = login(fd.get('email'), fd.get('password'))
-    if (!u) { view.querySelector('#login-err').textContent = 'Email atau password salah.'; return }
-    renderApp(document.querySelector('#app'), { page: (u.role === 'admin' || u.role === 'superadmin') ? 'admin-produk' : 'katalog' })
-  })
+  const form = view.querySelector('#auth-form')
+  const pass = view.querySelector('#auth-password')
+  const email = view.querySelector('#auth-email')
+  const err = view.querySelector('#auth-err')
   const toggle = view.querySelector('#toggle-pass')
-  const pass = view.querySelector('#login-password')
   if (toggle && pass) {
     toggle.dataset.eye = eye
     toggle.dataset.eyeoff = eyeOff
@@ -155,6 +149,32 @@ function renderLogin(view) {
       toggle.setAttribute('title', show ? 'Sembunyikan password' : 'Tampilkan password')
     })
   }
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault()
+    pass?.classList.remove('input-error')
+    email?.classList.remove('input-error')
+    const fd = new FormData(form)
+    if (isLogin) {
+      const u = login(fd.get('email'), fd.get('password'))
+      if (!u) {
+        if (err) err.textContent = 'Email atau password salah.'
+        pass?.classList.add('input-error')
+        email?.classList.add('input-error')
+        return
+      }
+      renderApp(document.querySelector('#app'), { page: (u.role === 'admin' || u.role === 'superadmin') ? 'admin-produk' : 'katalog' })
+    } else {
+      const res = register({ name: fd.get('name'), email: fd.get('email'), password: fd.get('password') })
+      if (res.error) {
+        if (err) err.textContent = res.error
+        if (/email/i.test(res.error)) email?.classList.add('input-error')
+        return
+      }
+      renderApp(document.querySelector('#app'), { page: 'katalog' })
+    }
+  })
+  view.querySelector('#to-register')?.addEventListener('click', (e) => { e.preventDefault(); renderLogin(view, 'register') })
+  view.querySelector('#to-login')?.addEventListener('click', (e) => { e.preventDefault(); renderLogin(view, 'login') })
 }
 
 function renderCatalog(view, user, state) {
@@ -383,7 +403,7 @@ function renderAdminUsers(view) {
 
 function bindNav(root, user, state) {
   root.querySelectorAll('#logout-btn').forEach((el) => el.addEventListener('click', () => { logout(); renderApp(root, { page: 'katalog' }) }))
-  root.querySelectorAll('#go-login').forEach((el) => el.addEventListener('click', () => renderLogin(root.querySelector('#view'))))
+  root.querySelectorAll('#go-login').forEach((el) => el.addEventListener('click', () => renderLogin(root.querySelector('#view'), 'login')))
   root.querySelectorAll('[data-page]').forEach((el) => el.addEventListener('click', (e) => {
     e.preventDefault()
     renderApp(root, { page: el.dataset.page })
