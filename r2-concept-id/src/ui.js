@@ -2,6 +2,7 @@ import { getCategories, getCurrentUser, listUsers, login, logout, createUser, de
 import { createProduct, deleteProduct, listProducts, updateProduct, WHATSAPP_NUMBER, generateProductCode } from './products.js'
 
 const BANNER_URL = 'https://i.imgur.com/FcGHtpi.png'
+const LOGIN_BANNER_URL = 'https://i.imgur.com/WoCkdb7.png'
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
@@ -108,7 +109,7 @@ function renderLogin(view) {
     <section class="auth">
       <div class="glass auth-split">
         <div class="auth-media" aria-hidden="true">
-          <img src="${esc(BANNER_URL)}" alt="Banner R2 Concept ID">
+          <img src="${esc(LOGIN_BANNER_URL)}" alt="Banner R2 Concept ID">
         </div>
         <div class="auth-form panel">
           <h1>Masuk ke R2 Concept ID</h1>
